@@ -30,7 +30,7 @@ h2{font-size:15px;font-weight:600;margin:0 0 24px;color:var(--red)}
 /* hero */
 .hero{display:block;text-align:center;padding:16px 16px 40px;overflow-x:clip}
 .big{position:absolute;inset:0;z-index:1;margin:0;line-height:0;user-select:none}
-.big canvas{display:block}#htx{position:absolute;left:50%;top:50%;width:1px;height:1px;opacity:0;border:0;padding:0;resize:none;font-size:16px;z-index:0;pointer-events:none}
+.big canvas{display:block}
 #ifin{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;pointer-events:none}
 .hero p{max-width:34ch;margin:32px auto 0}
 /* menu over the cover = same menu as the main page; badge menu takes over after the cover */
@@ -201,7 +201,7 @@ setTimeout(hide,6000);addEventListener("pageshow",function(){top();setTimeout(to
 <section class="hero" id="stage">
   <div class="vt" id="vt">
     <div class="lab">Traced Variable</div>
-    <h1 class="big" id="big" aria-label="Traced"><canvas id="hc" aria-hidden="true"></canvas></h1><textarea id="htx" rows="1" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Type to edit the hero word" maxlength="18"></textarea>
+    <h1 class="big" id="big" aria-label="Traced"><canvas id="hc" aria-hidden="true"></canvas></h1>
     <div class="sl"><label for="vs">Weight <b id="vw">100</b></label><input id="vs" type="range" min="30" max="200" value="100" aria-label="Weight"></div>
   </div>
   <p>Traced is a variable grotesque carrying the marks of letterpress newsprint into Latin letters. Move the pointer, and the red plate slips out of register.</p>
@@ -251,9 +251,9 @@ LEAVES A TRACE.</textarea>
   var hov=0,hovT=0,hx=0,hxT=0,manual=false,mw=100,mto=0;
   function layout(){
     var bw=vt.clientWidth,bh=vt.clientHeight,mt=0,i;
-    for(i=0;i<LET.length;i++)mt+=advW(LET[i],200)+TRK;
+    for(i=0;i<LET.length;i++)mt+=HD[LET[i]].adv[4]+TRK;
     dpr=Math.min(2,devicePixelRatio||1);
-    size=Math.min(460,Math.max(24,Math.min(bw*.88*1000/Math.max(1,mt-TRK),bh*.5)));
+    size=Math.min(460,Math.max(48,Math.min(bw*.88*1000/(mt-TRK),bh*.5)));
     PX=0;PY=0;W=bw;H=bh;y0=Math.round(H/2+size*.38);
     cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+"px";cv.style.height=H+"px";cv.style.margin="0";
     hx=hxT=W/2;
@@ -266,21 +266,15 @@ LEAVES A TRACE.</textarea>
     if(hov>.002&&!still){var c=W/2+(i-(LET.length-1)/2)*size*.6,d=(c-hx)/(size*.78),pr=30+170*Math.exp(-d*d);w+=(pr-w)*hov}
     return w;
   }
-  var FW=[100,300,400,600,700],MC={},ENDX=0;
-  function fcw(w){var k=0;while(k<3&&w>AX[k+1])k++;var f=(w-AX[k])/(AX[k+1]-AX[k]);return FW[f>.5?k+1:k]}
-  function mAdv(ch,fw){var key=ch+fw;if(MC[key]===undefined){cx.font=fw+" 1000px Traced,Archivo,sans-serif";MC[key]=cx.measureText(ch).width}return MC[key]}
-  function advW(ch,w){var g=HD[ch];if(g){var k=0;while(k<3&&w>AX[k+1])k++;var f=(w-AX[k])/(AX[k+1]-AX[k]);return g.adv[k]+(g.adv[k+1]-g.adv[k])*f}return mAdv(ch,fcw(w))}
   function drawWord(T,color,dx,dy){
-    var x=0,sc=size/1000,tot=0,i0,i,n=LET.length;
-    for(i0=0;i0<n;i0++)tot+=advW(LET[i0],wOf(i0,T))+TRK;
-    dx=dx-PX+(W-(n?(tot-TRK)*sc:0))/2;ENDX=dx+(n?(tot-TRK)*sc:0);
+    var x=0,sc=size/1000,tot=0,i0,i;
+    for(i0=0;i0<LET.length;i0++){var g0=HD[LET[i0]],w0=wOf(i0,T);
+      var k0=0;while(k0<3&&w0>AX[k0+1])k0++;var f0=(w0-AX[k0])/(AX[k0+1]-AX[k0]);
+      tot+=g0.adv[k0]+(g0.adv[k0+1]-g0.adv[k0])*f0+TRK}
+    dx=dx-PX+(W-(tot-TRK)*sc)/2;
     cx.fillStyle=color;cx.beginPath();
-    for(i=0;i<n;i++){
-      var ch=LET[i],g=HD[ch],w=wOf(i,T);
-      if(!g){
-        cx.font=fcw(w)+" "+size+"px Traced,Archivo,sans-serif";cx.textBaseline="alphabetic";cx.fillText(ch,dx+x*sc,dy+y0);
-        x+=mAdv(ch,fcw(w))+TRK;continue;
-      }
+    for(i=0;i<LET.length;i++){
+      var g=HD[LET[i]],w=wOf(i,T);
       var k=0;while(k<3&&w>AX[k+1])k++;
       var f=(w-AX[k])/(AX[k+1]-AX[k]);
       g.c.forEach(function(c){
@@ -307,21 +301,12 @@ LEAVES A TRACE.</textarea>
       cx.setTransform(dpr,0,0,dpr,0,0);cx.clearRect(0,0,W,H);
       drawWord(T,PLATE,ox+PX,oy);
       drawWord(T,"#fff",PX,0);
-      if(htFoc&&(Math.floor(now/530)%2===0)){cx.fillStyle="#fff";cx.fillRect(ENDX+size*.03,y0-size*.72,Math.max(2,size*.018),size*.8)}
-      var avg=0;for(var i=0;i<LET.length;i++)avg+=wOf(i,T);avg=Math.round(avg/(LET.length||1));
+      var avg=0;for(var i=0;i<LET.length;i++)avg+=wOf(i,T);avg=Math.round(avg/LET.length);
       if(avg!==lastVal&&!manual){lastVal=avg;vs.value=avg;vw.textContent=avg}
     }
     requestAnimationFrame(frame);
   }
   layout();addEventListener("resize",layout);requestAnimationFrame(frame);
-  var htx=document.getElementById("htx"),htFoc=false;
-  function setWord(v){v=v.replace(/[\r\n]+/g,"").slice(0,18);LET=v;big.setAttribute("aria-label",v||"Traced");layout()}
-  htx.addEventListener("input",function(){setWord(htx.value)});
-  htx.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();htx.blur()}});
-  htx.addEventListener("focus",function(){htFoc=true;vt.classList.add("typing")});htx.addEventListener("blur",function(){htFoc=false;vt.classList.remove("typing")});
-  vt.addEventListener("click",function(e){if(e.target.closest(".sl"))return;htx.value=LET;htx.focus({preventScroll:true});try{htx.setSelectionRange(htx.value.length,htx.value.length)}catch(_){}});
-  vt.style.cursor="text";
-  if(document.fonts&&document.fonts.load)Promise.all(FW.map(function(w){return document.fonts.load(w+" 100px Traced")})).then(layout).catch(function(){});
 
   // the box starts small and grows on hover; the letters near the pointer grow bold
   function vmove(e){var cr=cv.getBoundingClientRect();hxT=e.clientX-cr.left}
@@ -542,7 +527,6 @@ a.addEventListener('pointerenter',on);a.addEventListener('pointerleave',off);a.a
   ["input","keydown","keyup","select","focus"].forEach(function(n){
     itx.addEventListener(n,function(){caretOn=true;setTimeout(incDraw,0)});
   });
-  itx.addEventListener("input",function(){if(comp)return;var v=itx.value,u=v.toUpperCase();if(v!==u){var a=itx.selectionStart,b=itx.selectionEnd;itx.value=u;itx.setSelectionRange(a,b)}});
   itx.addEventListener("focus",function(){focusedI=true;incDraw()});
   itx.addEventListener("blur",function(){focusedI=false;incDraw()});
   setInterval(function(){if(focusedI){caretOn=!caretOn;incDraw()}},530);
