@@ -30,7 +30,7 @@ h2{font-size:15px;font-weight:600;margin:0 0 24px;color:var(--red)}
 /* hero */
 .hero{display:block;text-align:center;padding:16px 16px 40px;overflow-x:clip}
 .big{position:absolute;inset:0;z-index:1;margin:0;line-height:0;user-select:none}
-.big canvas{display:block}
+.big canvas{display:block}#htx{position:absolute;left:50%;top:50%;width:1px;height:1px;opacity:0;border:0;padding:0;resize:none;font-size:16px;z-index:0;pointer-events:none}
 #ifin{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;pointer-events:none}
 .hero p{max-width:34ch;margin:32px auto 0}
 /* menu over the cover = same menu as the main page; badge menu takes over after the cover */
@@ -79,7 +79,7 @@ h2{font-size:15px;font-weight:600;margin:0 0 24px;color:var(--red)}
 .row .ctl{margin-top:10px}
 #specimen{position:relative}
 #icn{display:block;max-width:100%;cursor:text;touch-action:manipulation}
-#itx{position:absolute;left:16px;top:56px;width:1px;height:1px;opacity:0;pointer-events:none;font-size:16px;resize:none;border:0;padding:0}
+#itx{position:absolute;left:16px;top:56px;width:1px;height:1px;opacity:0;pointer-events:none;-webkit-user-select:text;user-select:text;font-size:16px;resize:none;border:0;padding:0}
 .cap{font-size:13px;opacity:.55;margin:8px 0 0}
 .ctl input[type=range]{min-width:0}
 .ctl{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin-top:20px;max-width:480px;align-items:center}
@@ -201,7 +201,7 @@ setTimeout(hide,6000);addEventListener("pageshow",function(){top();setTimeout(to
 <section class="hero" id="stage">
   <div class="vt" id="vt">
     <div class="lab">Traced Variable</div>
-    <h1 class="big" id="big" aria-label="Traced"><canvas id="hc" aria-hidden="true"></canvas></h1>
+    <h1 class="big" id="big" aria-label="Traced"><canvas id="hc" aria-hidden="true"></canvas></h1><textarea id="htx" rows="1" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Type to edit the hero word" maxlength="18"></textarea>
     <div class="sl"><label for="vs">Weight <b id="vw">100</b></label><input id="vs" type="range" min="30" max="200" value="100" aria-label="Weight"></div>
   </div>
   <p>Traced is a variable grotesque carrying the marks of letterpress newsprint into Latin letters. Move the pointer, and the red plate slips out of register.</p>
@@ -251,9 +251,9 @@ LEAVES A TRACE.</textarea>
   var hov=0,hovT=0,hx=0,hxT=0,manual=false,mw=100,mto=0;
   function layout(){
     var bw=vt.clientWidth,bh=vt.clientHeight,mt=0,i;
-    for(i=0;i<LET.length;i++)mt+=HD[LET[i]].adv[4]+TRK;
+    for(i=0;i<LET.length;i++)mt+=advW(LET[i],200)+TRK;
     dpr=Math.min(2,devicePixelRatio||1);
-    size=Math.min(460,Math.max(48,Math.min(bw*.88*1000/(mt-TRK),bh*.5)));
+    size=Math.min(460,Math.max(24,Math.min(bw*.88*1000/Math.max(1,mt-TRK),bh*.5)));
     PX=0;PY=0;W=bw;H=bh;y0=Math.round(H/2+size*.38);
     cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+"px";cv.style.height=H+"px";cv.style.margin="0";
     hx=hxT=W/2;
@@ -266,15 +266,21 @@ LEAVES A TRACE.</textarea>
     if(hov>.002&&!still){var c=W/2+(i-(LET.length-1)/2)*size*.6,d=(c-hx)/(size*.78),pr=30+170*Math.exp(-d*d);w+=(pr-w)*hov}
     return w;
   }
+  var FW=[100,300,400,600,700],MC={},ENDX=0;
+  function fcw(w){var k=0;while(k<3&&w>AX[k+1])k++;var f=(w-AX[k])/(AX[k+1]-AX[k]);return FW[f>.5?k+1:k]}
+  function mAdv(ch,fw){var key=ch+fw;if(MC[key]===undefined){cx.font=fw+" 1000px Traced,Archivo,sans-serif";MC[key]=cx.measureText(ch).width}return MC[key]}
+  function advW(ch,w){var g=HD[ch];if(g){var k=0;while(k<3&&w>AX[k+1])k++;var f=(w-AX[k])/(AX[k+1]-AX[k]);return g.adv[k]+(g.adv[k+1]-g.adv[k])*f}return mAdv(ch,fcw(w))}
   function drawWord(T,color,dx,dy){
-    var x=0,sc=size/1000,tot=0,i0,i;
-    for(i0=0;i0<LET.length;i0++){var g0=HD[LET[i0]],w0=wOf(i0,T);
-      var k0=0;while(k0<3&&w0>AX[k0+1])k0++;var f0=(w0-AX[k0])/(AX[k0+1]-AX[k0]);
-      tot+=g0.adv[k0]+(g0.adv[k0+1]-g0.adv[k0])*f0+TRK}
-    dx=dx-PX+(W-(tot-TRK)*sc)/2;
+    var x=0,sc=size/1000,tot=0,i0,i,n=LET.length;
+    for(i0=0;i0<n;i0++)tot+=advW(LET[i0],wOf(i0,T))+TRK;
+    dx=dx-PX+(W-(n?(tot-TRK)*sc:0))/2;ENDX=dx+(n?(tot-TRK)*sc:0);
     cx.fillStyle=color;cx.beginPath();
-    for(i=0;i<LET.length;i++){
-      var g=HD[LET[i]],w=wOf(i,T);
+    for(i=0;i<n;i++){
+      var ch=LET[i],g=HD[ch],w=wOf(i,T);
+      if(!g){
+        cx.font=fcw(w)+" "+size+"px Traced,Archivo,sans-serif";cx.textBaseline="alphabetic";cx.fillText(ch,dx+x*sc,dy+y0);
+        x+=mAdv(ch,fcw(w))+TRK;continue;
+      }
       var k=0;while(k<3&&w>AX[k+1])k++;
       var f=(w-AX[k])/(AX[k+1]-AX[k]);
       g.c.forEach(function(c){
@@ -301,12 +307,22 @@ LEAVES A TRACE.</textarea>
       cx.setTransform(dpr,0,0,dpr,0,0);cx.clearRect(0,0,W,H);
       drawWord(T,PLATE,ox+PX,oy);
       drawWord(T,"#fff",PX,0);
-      var avg=0;for(var i=0;i<LET.length;i++)avg+=wOf(i,T);avg=Math.round(avg/LET.length);
+      if(htFoc&&(Math.floor(now/530)%2===0)){cx.fillStyle="#fff";cx.fillRect(ENDX+size*.03,y0-size*.72,Math.max(2,size*.018),size*.8)}
+      var avg=0;for(var i=0;i<LET.length;i++)avg+=wOf(i,T);avg=Math.round(avg/(LET.length||1));
       if(avg!==lastVal&&!manual){lastVal=avg;vs.value=avg;vw.textContent=avg}
     }
     requestAnimationFrame(frame);
   }
   layout();addEventListener("resize",layout);requestAnimationFrame(frame);
+  var htx=document.getElementById("htx"),htFoc=false;
+  function setWord(v){v=v.replace(/[\r\n]+/g,"").slice(0,18);LET=v;big.setAttribute("aria-label",v||"Traced");layout()}
+  htx.addEventListener("input",function(){setWord(htx.value)});
+  htx.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();htx.blur()}});
+  htx.addEventListener("focus",function(){htFoc=true;vt.classList.add("typing")});htx.addEventListener("blur",function(){htFoc=false;vt.classList.remove("typing")});
+  vt.addEventListener("click",function(e){if(e.target.closest(".sl"))return;htx.value=LET;htx.focus({preventScroll:true});try{htx.setSelectionRange(htx.value.length,htx.value.length)}catch(_){}});
+  vt.style.cursor="text";
+  if(document.fonts&&document.fonts.load)Promise.all(FW.map(function(w){return document.fonts.load(w+" 100px Traced")})).then(layout).catch(function(){});
+
   // the box starts small and grows on hover; the letters near the pointer grow bold
   function vmove(e){var cr=cv.getBoundingClientRect();hxT=e.clientX-cr.left}
   vt.addEventListener("pointerenter",function(e){if(window.__sn)return;vt.classList.add("on");hovT=1;vmove(e)});
@@ -362,7 +378,7 @@ a.addEventListener('pointerenter',on);a.addEventListener('pointerleave',off);a.a
     var snA=0,lastY=scrollY;function fitVT(){var st=document.getElementById("stage"),v=document.getElementById("vt"),q=st.querySelector("p");if(!q)return;var h=innerHeight-68-24-q.offsetHeight-parseFloat(getComputedStyle(q).marginTop);v.style.minHeight="0";if(innerWidth<=520)h=Math.min(h,innerWidth*.95);v.style.height=Math.round(Math.max(240,Math.min(800,h)))+"px"}function calcSY(){fitVT();var st=document.getElementById("stage");window.__sy=Math.max(0,st.getBoundingClientRect().top+scrollY)}function snapY(){return window.__sy||0}calcSY();addEventListener("resize",calcSY);addEventListener("load",calcSY);setTimeout(calcSY,600);setTimeout(calcSY,2000)
     function glide(to){var from=scrollY,d=to-from,t0=performance.now(),D=Math.min(1100,520+Math.abs(d)*.5);snA=window.__sn=1;function e(x){return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2}(function f(n){var k=Math.min(1,(n-t0)/D);scrollTo({top:from+d*e(k),behavior:"instant"});if(k<1)requestAnimationFrame(f);else{lastY=scrollY;(function w(){if(performance.now()-lastW>220){snA=window.__sn=0;lk=0;lastY=scrollY;var hv=document.getElementById("vt");hv.classList.toggle("on",hv.matches(":hover"))}else{lk=1;setTimeout(w,60)}})()}})(t0)}
     
-    var lastW=0,lk=0;function stop(ev){lastW=performance.now();if(snA)ev.preventDefault()}addEventListener("wheel",stop,{passive:false});addEventListener("touchmove",stop,{passive:false});
+    var lastW=0,lk=0;function stop(ev){lastW=performance.now();if(snA)ev.preventDefault()}addEventListener("touchmove",stop,{passive:false});addEventListener("wheel",function(ev){lastW=performance.now();if(snA){ev.preventDefault();return}if(ev.ctrlKey||!ev.deltaY||tp.classList.contains("open"))return;var y=scrollY,t=snapY();if(ev.deltaY>0&&y<t-2){ev.preventDefault();glide(t)}else if(ev.deltaY<0&&y>2&&y<=t+2){ev.preventDefault();glide(0)}},{passive:false});
     addEventListener("scroll",function(){if(snA||lk)return;var t=snapY(),y=scrollY,dir=y-lastY;lastY=y;if(y>2&&y<t-2&&dir!==0){glide(dir>0?t:0)}},{passive:true});
     function dim(){var h=cvr.offsetHeight||1;cvr.style.setProperty("--dim",Math.min(.5,Math.max(0,scrollY/h*.55)).toFixed(3))}
     addEventListener("scroll",dim,{passive:true});addEventListener("resize",dim);dim();
@@ -519,13 +535,14 @@ a.addEventListener('pointerenter',on);a.addEventListener('pointerleave',off);a.a
     for(var j=0;j<L.cs.length;j++){if(x<L.cs[j].x+L.cs[j].a/2)return L.cs[j].i}
     var last=L.cs[L.cs.length-1];return last.ch==="\n"?last.i:last.i+1;
   }
-  icn.addEventListener("pointerdown",function(e){
-    e.preventDefault();var i=incHit(e);itx.focus();itx.setSelectionRange(i,i);caretOn=true;incDraw();
-  });
+  var pendI=null,comp=false;
+  icn.addEventListener("pointerdown",function(e){pendI=incHit(e);if(e.pointerType==="mouse"){e.preventDefault();itx.focus({preventScroll:true});itx.setSelectionRange(pendI,pendI);caretOn=true;incDraw()}});
+  icn.addEventListener("click",function(){itx.focus({preventScroll:true});if(pendI!==null){try{itx.setSelectionRange(pendI,pendI)}catch(e){}}caretOn=true;incDraw()});
+  itx.addEventListener("compositionstart",function(){comp=true});itx.addEventListener("compositionend",function(){comp=false;itx.dispatchEvent(new Event("input"))});
   ["input","keydown","keyup","select","focus"].forEach(function(n){
     itx.addEventListener(n,function(){caretOn=true;setTimeout(incDraw,0)});
   });
-  itx.addEventListener("input",function(){var v=itx.value,u=v.toUpperCase();if(v!==u){var a=itx.selectionStart,b=itx.selectionEnd;itx.value=u;itx.setSelectionRange(a,b)}});
+  itx.addEventListener("input",function(){if(comp)return;var v=itx.value,u=v.toUpperCase();if(v!==u){var a=itx.selectionStart,b=itx.selectionEnd;itx.value=u;itx.setSelectionRange(a,b)}});
   itx.addEventListener("focus",function(){focusedI=true;incDraw()});
   itx.addEventListener("blur",function(){focusedI=false;incDraw()});
   setInterval(function(){if(focusedI){caretOn=!caretOn;incDraw()}},530);
