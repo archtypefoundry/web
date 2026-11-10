@@ -62,7 +62,9 @@ h2{font-size:15px;font-weight:600;margin:0 0 24px;color:var(--red)}
 @keyframes cvin{from{transform:scale(1.06);opacity:0}to{transform:none;opacity:1}}
 /* fixed box: Traced moves inside, the box reacts to the pointer */
 .vt{--sc:1;--r:clamp(20px,3.6vw,48px);position:relative;margin:0 auto;max-width:1500px;height:min(calc(100svh - 92px),800px);min-height:380px;border-radius:var(--r);background:var(--red);color:#fff;overflow:hidden;display:grid;place-items:center;touch-action:pan-y;cursor:crosshair}
+.vt{transform:scale(var(--sc));transition:transform .6s cubic-bezier(.2,.7,.2,1)}
 .vt.on{--sc:1}
+@media (hover:hover) and (pointer:fine){.vt{--sc:.82}.vt.on{--sc:1}}
 .vt .lab{z-index:2;position:absolute;top:22px;left:0;right:0;text-align:center;font:400 13px/1 var(--f);opacity:.9;pointer-events:none}
 .vt .sl{z-index:2;position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;font:400 11px/1 ui-monospace,Menlo,monospace;white-space:nowrap}
 .vt .sl input{width:clamp(90px,14vw,170px);height:1px;cursor:pointer;-webkit-appearance:none;appearance:none;background:#fff8;outline-offset:8px;accent-color:#fff}
@@ -309,10 +311,11 @@ LEAVES A TRACE.</textarea>
   layout();addEventListener("resize",layout);requestAnimationFrame(frame);
 
   // the box starts small and grows on hover; the letters near the pointer grow bold
-  function vmove(e){var cr=cv.getBoundingClientRect();hxT=e.clientX-cr.left}
-  vt.addEventListener("pointerenter",function(e){if(window.__sn)return;vt.classList.add("on");hovT=1;vmove(e)});
+  function vmove(e){var cr=cv.getBoundingClientRect();hxT=(e.clientX-cr.left)*(W/(cr.width||W))}
+  var SC0=.82;function hvt(e){if(e.pointerType&&e.pointerType!=="mouse")return;if(window.__sn)return;var b=vt.getBoundingClientRect(),cxm=b.left+b.width/2,cym=b.top+b.height/2,k=vt.classList.contains("on")?1:SC0,hw=vt.offsetWidth*k/2,hh=vt.offsetHeight*k/2,inn=Math.abs(e.clientX-cxm)<=hw&&Math.abs(e.clientY-cym)<=hh;if(inn!==vt.classList.contains("on")){vt.classList.toggle("on",inn);hovT=inn?1:0}if(inn)vmove(e)}
+  window.addEventListener("pointermove",hvt,{passive:true});document.documentElement.addEventListener("pointerleave",function(){vt.classList.remove("on");hovT=0});
   vt.addEventListener("pointermove",vmove);
-  vt.addEventListener("pointerleave",function(){if(window.__sn)return;vt.classList.remove("on");hovT=0});
+  
   vt.addEventListener("focusin",function(){vt.classList.add("on")});vt.addEventListener("focusout",function(){if(!vt.matches(":hover"))vt.classList.remove("on")});
   vs.addEventListener("input",function(){manual=true;mw=+vs.value;vw.textContent=vs.value;clearTimeout(mto)});
   vs.addEventListener("change",function(){clearTimeout(mto);mto=setTimeout(function(){manual=false;lastVal=-1},2600)});
