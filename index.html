@@ -276,7 +276,20 @@ function startVideo(){
   function off(){['pointerdown','touchstart','keydown','click','wheel'].forEach(function(t){window.removeEventListener(t,onGest,true)})}
   ['pointerdown','touchstart','keydown','click','wheel'].forEach(function(t){window.addEventListener(t,onGest,true)});
   iv.addEventListener('canplay',function(){if(my===run&&phase===0&&iv.paused&&!blocked)kick()},{once:true});
-  setTimeout(function(){if(my===run&&phase===0&&iv.paused&&iv.currentTime===0)kick()},700);
+  setTimeout(function(){if(my===run&&phase===0&&iv.paused&&iv.currentTime===0)kick()},450);
+  /* autoplay refused (e.g. Safari): drive the clip by seeking so it still plays without a gesture */
+  setTimeout(function(){
+    if(my!==run||phase!==0||(!iv.paused&&iv.currentTime>0.05))return;
+    var t0=performance.now(),sp=1.17;
+    (function seekStep(){
+      if(my!==run||phase!==0)return;
+      if(!iv.paused&&iv.currentTime>0.3)return;/* real playback took over */
+      var tt=(performance.now()-t0)/1000*sp;
+      if(iv.duration)tt=Math.min(tt,iv.duration-.02);
+      if(!iv.seeking&&Math.abs(iv.currentTime-tt)>.02){try{iv.currentTime=tt}catch(e){}}
+      requestAnimationFrame(seekStep)
+    })();
+  },500);
   try{iv.defaultPlaybackRate=iv.playbackRate=1.17;iv.currentTime=0;kick()}catch(e){}
   var fin=false;function loop(){if(my!==run||phase!==0)return;drawVideo();if(!fin&&iv.currentTime>=7.0){fin=true;go1()}requestAnimationFrame(loop)}
   requestAnimationFrame(loop);
